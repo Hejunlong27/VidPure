@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VidPure · 视频去字幕 + 画质放大</title>
+<style>
+  :root{
+    --p:#534AB7; --p-light:#EEEDFE; --p-dark:#26215C;
+    --teal:#0F6E56; --teal-bg:#E1F5EE;
+    --amber:#854F0B; --amber-bg:#FAEEDA;
+    --red:#A32D2D; --red-bg:#FCEBEB;
+    --ink:#1f2329; --muted:#646a73; --line:#e5e6eb; --bg:#f5f6f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+       background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;
+       padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:720px;margin:0 auto;padding:16px}
+  header{background:#fff;border-bottom:1px solid var(--line);
+         padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+         position:sticky;top:0;z-index:10}
+  header h1{font-size:17px;font-weight:600;color:var(--p-dark)}
+  header h1 span{color:var(--p)}
+  #hwBadge{font-size:12px;color:var(--muted);background:var(--bg);
+           border:1px solid var(--line);border-radius:20px;padding:3px 10px;white-space:nowrap}
+  #hwBadge b{color:var(--teal);font-weight:500}
+
+  .steps{display:flex;gap:6px;margin:18px 0 12px;align-items:center}
+  .step{flex:1;text-align:center;font-size:12.5px;color:var(--muted);padding:6px 0;
+        border-radius:8px;background:#fff;border:1px solid var(--line)}
+  .step.on{background:var(--p-light);border-color:var(--p);color:var(--p-dark);font-weight:500}
+  .step.done{background:var(--teal-bg);border-color:var(--teal);color:var(--teal)}
+  .arrow{color:#c0c4cc;font-size:12px}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;
+        padding:18px;margin-bottom:14px}
+  .card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .num{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--p);
+       color:#fff;font-size:12px;align-items:center;justify-content:center;flex:none}
+
+  /* 上传区 */
+  #drop{border:2px dashed #c9c5f0;border-radius:12px;padding:34px 16px;text-align:center;
+        cursor:pointer;transition:background .15s;background:#fbfbfe}
+  #drop.drag{background:var(--p-light);border-color:var(--p)}
+  #drop .big{font-size:16px;font-weight:500;color:var(--p-dark);margin-bottom:4px}
+  #drop .hint{font-size:12.5px;color:var(--muted)}
+  .upbar{height:8px;background:var(--bg);border-radius:6px;overflow:hidden;margin-top:12px;display:none}
+  .upbar i{display:block;height:100%;background:var(--p);border-radius:6px;width:0;transition:width .2s}
+  .uptext{font-size:12.5px;color:var(--muted);margin-top:6px;text-align:center;display:none}
+
+  /* 预览与框选 */
+  #previewSec{display:none}
+  .framewrap{position:relative;max-width:100%;border-radius:10px;overflow:hidden;
+             user-select:none;touch-action:none;background:#000}
+  #thumb{display:block;width:100%;pointer-events:none}
+  #selBox{position:absolute;border:2px solid #ffd75e;background:rgba(255,215,94,.18);
+          display:none;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.28)}
+  .hintline{font-size:13px;color:var(--muted);margin:10px 0 8px}
+  .switchrow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--teal-bg);
+             border-radius:10px;margin-bottom:10px}
+  .switchrow .t{font-size:13.5px;color:var(--teal);flex:1}
+  .switch{position:relative;width:44px;height:24px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#c9cdc4;border-radius:24px;cursor:pointer;transition:.2s}
+  .slider:before{content:"";position:absolute;width:18px;height:18px;border-radius:50%;
+                 background:#fff;top:3px;left:3px;transition:.2s}
+  .switch input:checked + .slider{background:var(--teal)}
+  .switch input:checked + .slider:before{transform:translateX(20px)}
+
+  /* 模式选择 */
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  @media (max-width:480px){.modes{grid-template-columns:1fr}}
+  .mode{border:1.5px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;
+        text-align:center;transition:.15s;background:#fff}
+  .mode .ico{font-size:22px}
+  .mode .nm{font-weight:600;font-size:13.5px;margin:4px 0 2px}
+  .mode .de{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .mode.on{border-color:var(--p);background:var(--p-light)}
+  .mode.on .nm{color:var(--p-dark)}
+  .mode .tag{display:inline-block;font-size:10.5px;border-radius:8px;padding:0 6px;margin-top:4px}
+  .tag-ok{background:var(--teal-bg);color:var(--teal)}
+  .tag-warn{background:var(--amber-bg);color:var(--amber)}
+
+  .scales{display:flex;gap:8px;margin-top:12px}
+  .scale{flex:1;border:1.5px solid var(--line);border-radius:10px;padding:8px;text-align:center;
+         font-size:13px;cursor:pointer;background:#fff}
+  .scale b{display:block;font-size:14px}
+  .scale span{font-size:11px;color:var(--muted)}
+  .scale.on{border-color:var(--p);background:var(--p-light)}
+
+  /* 按钮 */
+  .go{width:100%;padding:14px;border:none;border-radius:12px;background:var(--p);color:#fff;
+      font-size:16px;font-weight:600;cursor:pointer;margin-top:4px}
+  .go:disabled{background:#b9b5e3;cursor:not-allowed}
+  .go:not(:disabled):active{transform:scale(.985)}
+
+  /* 任务卡 */
+  #tasks .tcard{background:#fff;border:1px solid var(--line);border-radius:14px;
+                padding:16px;margin-bottom:12px}
+  .tcard .tt{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .tcard .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill{font-size:11.5px;padding:2px 10px;border-radius:12px;flex:none;margin-left:8px}
+  .pill.run{background:var(--p-light);color:var(--p)}
+  .pill.ok{background:var(--teal-bg);color:var(--teal)}
+  .pill.err{background:var(--red-bg);color:var(--red)}
+  .pbar{height:8px;background:var(--bg);border-radius:6px;overflow:hidden;margin:8px 0}
+  .pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--p),#7F77DD);
+          border-radius:6px;width:0;transition:width .4s}
+  .pbar.ind i{width:38%!important;animation:ind 1.1s ease-in-out infinite alternate}
+  @keyframes ind{from{margin-left:0}to{margin-left:62%}}
+  .msg{font-size:12.5px;color:var(--muted)}
+  .errbox{background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 12px;
+          font-size:13px;margin-top:8px}
+  .resvid{width:100%;border-radius:10px;margin-top:10px;background:#000;max-height:420px}
+  .dl{display:block;text-align:center;margin-top:10px;padding:11px;border-radius:10px;
+      background:var(--teal);color:#fff;text-decoration:none;font-weight:600;font-size:14px}
+  .again{display:block;text-align:center;margin-top:8px;color:var(--p);font-size:13px;
+         text-decoration:none;cursor:pointer}
+
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+         background:#2c2c2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;
+         opacity:0;pointer-events:none;transition:.25s;max-width:88%;text-align:center;z-index:99}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:#b0b3ba;font-size:11.5px;padding:18px 0 8px}
+  .envwarn{background:var(--red-bg);border:1.5px solid #e24b4a;border-radius:12px;
+           padding:14px 16px;margin:0 0 14px;font-size:13.5px;color:var(--red);line-height:1.7}
+  .envwarn b{font-size:14px}
+  .envwarn code{background:#fff;border:1px solid #f0b9b9;border-radius:4px;padding:0 6px;
+                font-family:Consolas,monospace;font-size:12.5px;color:var(--red)}
+</style>
+</head>
+<body>
+<header>
+  <h1>VidPure<span> · 视频去字幕</span></h1>
+  <div id="hwBadge">检测中…</div>
+</header>
+
+<div class="wrap">
+  <div class="steps">
+    <div class="step on" id="s1">1 · 选择视频</div><span class="arrow">›</span>
+    <div class="step" id="s2">2 · 选模式</div><span class="arrow">›</span>
+    <div class="step" id="s3">3 · 获取结果</div>
+  </div>
+
+  <!-- 1 上传 -->
+  <div class="card" id="upCard">
+    <h2><i class="num">1</i>选择要处理的视频</h2>
+    <div id="drop">
+      <div class="big">点击选择 或 拖拽视频到这里</div>
+      <div class="hint">支持 mp4 / mov / mkv / webm，处理在本机完成，不会上传到任何服务器</div>
+    </div>
+    <input type="file" id="fileInput" accept="video/*,.mp4,.mov,.mkv,.webm,.m4v,.avi,.ts,.flv" hidden>
+    <div class="upbar" id="upbar"><i></i></div>
+    <div class="uptext" id="uptext"></div>
+  </div>
+
+  <!-- 2 预览与区域 -->
+  <div class="card" id="previewSec">
+    <h2><i class="num">2</i>确认字幕位置</h2>
+    <label class="switchrow">
+      <span class="t">字幕在画面底部（最常见，推荐）</span>
+      <span class="switch"><input type="checkbox" id="autoRegion" checked><span class="slider"></span></span>
+    </label>
+    <div id="customBox" style="display:none">
+      <div class="hintline">在下面画面上<b>按住并拖动</b>，框住字幕出现的区域（框略大于字幕即可）：</div>
+      <div class="framewrap" id="frameWrap">
+        <img id="thumb" alt="视频首帧" draggable="false">
+        <div id="selBox"></div>
+      </div>
+      <div class="hintline" id="selHint" style="margin-top:8px">尚未框选 —— 请拖出一个覆盖字幕的矩形</div>
+    </div>
+  </div>
+
+  <!-- 3 模式 -->
+  <div class="card" id="modeCard" style="display:none">
+    <h2><i class="num">3</i>选择处理方式</h2>
+    <div class="modes">
+      <div class="mode" data-clean="fast">
+        <div class="ico">⚡</div><div class="nm">快速去字幕</div>
+        <div class="de">几秒到几分钟<br>可能有轻微痕迹</div>
+        <span class="tag tag-warn">速度快</span>
+      </div>
+      <div class="mode on" data-clean="lama" id="modeLama">
+        <div class="ico">✨</div><div class="nm">高清修复</div>
+        <div class="de">AI 逐帧修复<br>几乎无痕迹</div>
+        <span class="tag tag-ok">效果最好</span>
+      </div>
+      <div class="mode" data-clean="crop">
+        <div class="ico">✂️</div><div class="nm">裁掉字幕区</div>
+        <div class="de">剪掉画面底部<br>构图会变化</div>
+        <span class="tag tag-warn">最干净</span>
+      </div>
+    </div>
+    <div class="scales">
+      <div class="scale" data-scale="0"><b>不放大</b><span>保持原画质</span></div>
+      <div class="scale on" data-scale="2"><b>2倍放大</b><span>推荐 · 更清晰</span></div>
+      <div class="scale" data-scale="4"><b>4倍放大</b><span>超高清 · 较慢</span></div>
+    </div>
+  </div>
+
+  <button class="go" id="goBtn" disabled>开始处理</button>
+
+  <!-- 任务列表 -->
+  <div id="tasks" style="margin-top:18px"></div>
+
+  <footer>VidPure Web · 全部处理在本机完成 · 页面必须由 vidpure web 服务打开 · 关闭此窗口前请勿关闭命令行窗口</footer>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const state = {fid:null, name:"", file:null, region:null, clean:"lama", scale:2, poller:{}};
+
+/* ---------- 环境自检：必须由 vidpure web 服务打开，静态预览无法工作 ---------- */
+fetch("/api/probe").then(r=>{
+  if(!r.ok) throw new Error("not vidpure");
+  const ct = r.headers.get("content-type")||"";
+  if(!ct.includes("application/json")) throw new Error("not vidpure");
+  return r.json();
+}).then(d=>{
+  const b = $("#hwBadge");
+  if(d.gpu && d.gpu!=="未检测到独立显卡"){
+    b.innerHTML = "<b>"+d.gpu.replace("NVIDIA GeForce ","")+"</b> · "+d.vram_gb+"GB";
+  }else{ b.textContent = "CPU 模式"; }
+  if(!d.lama_ready){
+    $("#modeLama").querySelector(".tag").textContent = "需先安装组件";
+    $("#modeLama").querySelector(".tag").className = "tag tag-warn";
+    toast("检测到未安装高清修复组件，已默认选中「快速去字幕」");
+    setMode("fast");
+  }else{ setMode("lama"); }
+}).catch(()=>{
+  // 打开方式不对：静态预览 / 双击文件 / 别的服务
+  $("#goBtn").disabled = true;
+  const w = document.createElement("div");
+  w.className = "envwarn";
+  w.innerHTML = "<b>⚠ 当前页面不是由 VidPure 服务打开的，上传功能不可用。</b><br>"
+    + "静态预览中没有处理引擎。请按以下步骤启动：<br>"
+    + "1. 打开命令行窗口（Win+R 输入 cmd 回车）<br>"
+    + "2. 进入项目目录后运行：<code>python -m vidpure.cli web</code><br>"
+    + "3. 在浏览器访问 <code>http://127.0.0.1:8787</code>（命令行会自动打开）";
+  document.querySelector(".steps").parentNode.insertBefore(w, document.querySelector(".steps"));
+  $("#drop").addEventListener("click", function block(e){
+    e.stopImmediatePropagation();
+    toast("静态预览无法上传：请先按红色提示启动 vidpure 服务", true);
+  }, true);
+});
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg, long){
+  const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"), long?5200:2800);
+}
+
+/* ---------- 步骤条 ---------- */
+function steps(n){
+  ["#s1","#s2","#s3"].forEach((s,i)=>{
+    const el=$(s);
+    el.className="step"+(i<n-1?" done":i===n-1?" on":"");
+  });
+}
+
+/* ---------- 通用 API 调用（带防护：非 JSON 响应/空响应/网络错误 → 中文提示 + 自动重试） ---------- */
+async function apiJSON(url, opts, retries){
+  retries = retries===undefined ? 2 : retries;
+  let lastErr = null;
+  for(let i=0;i<=retries;i++){
+    try{
+      const r = await fetch(url, opts);
+      const text = await r.text();
+      let j = null;
+      try{ j = JSON.parse(text); }catch(e){ /* 空/HTML/截断响应 */ }
+      if(!j){
+        if(r.status===404 || r.status===501)
+          throw new Error("当前页面不是由 VidPure 服务打开的（静态预览无上传功能）——请运行 python -m vidpure.cli web 并访问 127.0.0.1:8787");
+        throw new Error("服务响应异常（"+r.status+"），已自动重试仍失败");
+      }
+      return j;
+    }catch(e){
+      if(String(e.message||"").includes("VidPure 服务")) throw e;  // 环境错误不重试
+      lastErr = e;
+      if(e.message==="__SESSION_DEAD__") throw new Error("上传会话已失效，请重新选择视频");
+      if(i<retries) await new Promise(r=>setTimeout(r, 700*(i+1)));
+    }
+  }
+  const m = String(lastErr && lastErr.message || lastErr);
+  if(m.includes("Failed to fetch") || m.includes("NetworkError") || m.includes("fetch"))
+    throw new Error("网络连接中断：请确认本服务窗口仍在运行，然后重新上传");
+  throw lastErr;
+}
+
+/* ---------- 上传 ---------- */
+const drop=$("#drop");
+drop.addEventListener("click",()=>$("#fileInput").click());
+["dragover","dragenter"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("drag")}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("drag")}));
+drop.addEventListener("drop",ev=>{ if(ev.dataTransfer.files[0]) upload(ev.dataTransfer.files[0]); });
+$("#fileInput").addEventListener("change",e=>{ if(e.target.files[0]) upload(e.target.files[0]); });
+
+async function upload(file){
+  if(!/\.(mp4|mov|mkv|webm|m4v|avi|ts|flv)$/i.test(file.name)){
+    return toast("暂不支持该格式，请选择 mp4 / mov / mkv / webm 等常见视频");
+  }
+  if(file.size > 3*1024*1024*1024) return toast("视频超过 3GB，请先剪辑缩短后再试");
+  state.file=file; state.name=file.name;
+  $("#upbar").style.display="block"; $("#uptext").style.display="block";
+  $("#uptext").textContent="准备上传…";
+  try{
+    const start = await apiJSON("/api/upload/start",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:file.name, size:file.size})
+    }, 1);
+    const chunkSize = start.chunk||4*1024*1024;
+    let offset=0, sent=0;
+    while(offset < file.size){
+      const piece = file.slice(offset, offset+chunkSize);
+      // 每片独立重试（最多 3 次），瞬时网络抖动不影响整体上传
+      const j = await apiJSON("/api/upload/chunk?fid="+start.fid,{method:"POST",body:piece}, 2);
+      offset += piece.size; sent = j.received;
+      const pct = Math.round(sent/file.size*100);
+      $("#upbar i").style.width=pct+"%";
+      $("#uptext").textContent = "正在读取视频 "+pct+"%（"+fmtMB(sent)+" / "+fmtMB(file.size)+"）";
+    }
+    const end = await apiJSON("/api/upload/end?fid="+start.fid,{method:"POST"}, 1);
+    state.fid = end.fid;
+    afterUpload();
+  }catch(e){
+    state.fid=null;
+    $("#uptext").textContent="上传未完成";
+    $("#upbar").style.display="none";
+    toast("上传失败："+e.message+" —— 请点击上方重新选择视频再试", true);
+  }
+}
+function fmtMB(n){ return n>1048576? (n/1048576).toFixed(1)+"MB" : Math.round(n/1024)+"KB"; }
+
+async function afterUpload(){
+  steps(2);
+  $("#previewSec").style.display="block";
+  $("#modeCard").style.display="block";
+  $("#goBtn").disabled=false;
+  $("#upCard").querySelector("h2").innerHTML='<i class="num">1</i>已选择：'+esc(state.name)
+    +' <a style="font-size:12px;color:var(--p);cursor:pointer;margin-left:6px" id="rePick">重新选择</a>';
+  $("#rePick").onclick=()=>$("#fileInput").click();
+  $("#thumb").src = "/api/thumb/"+state.fid+".jpg?t="+Date.now();
+  if(!$("#autoRegion").checked) $("#customBox").style.display="block";
+  $("#previewSec").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---------- 框选字幕区域（Pointer Events，兼容触屏） ---------- */
+$("#autoRegion").addEventListener("change",e=>{
+  $("#customBox").style.display = e.target.checked?"none":"block";
+});
+const wrap=$("#frameWrap"), box=$("#selBox");
+let dragging=false, sx=0, sy=0;
+wrap.addEventListener("pointerdown",e=>{
+  if($("#autoRegion").checked) return;
+  dragging=true; wrap.setPointerCapture(e.pointerId);
+  const r=wrap.getBoundingClientRect();
+  sx=(e.clientX-r.left)/r.width; sy=(e.clientY-r.top)/r.height;
+  box.style.display="block";
+  draw(sx,sy,sx,sy);
+});
+wrap.addEventListener("pointermove",e=>{
+  if(!dragging) return;
+  const r=wrap.getBoundingClientRect();
+  const x=Math.min(Math.max((e.clientX-r.left)/r.width,0),1);
+  const y=Math.min(Math.max((e.clientY-r.top)/r.height,0),1);
+  draw(sx,sy,x,y);
+});
+wrap.addEventListener("pointerup",e=>{
+  if(!dragging) return; dragging=false;
+  const r=wrap.getBoundingClientRect();
+  const x=Math.min(Math.max((e.clientX-r.left)/r.width,0),1);
+  const y=Math.min(Math.max((e.clientY-r.top)/r.height,0),1);
+  const x0=Math.min(sx,x), x1=Math.max(sx,x), y0=Math.min(sy,y), y1=Math.max(sy,y);
+  if((x1-x0)<0.04 || (y1-y0)<0.02){
+    box.style.display="none"; state.region=null;
+    $("#selHint").innerHTML="选区太小，请重新拖动一个稍大的框";
+    return;
+  }
+  state.region=[x0.toFixed(4),y0.toFixed(4),x1.toFixed(4),y1.toFixed(4)].join(",");
+  $("#selHint").innerHTML='<b style="color:var(--teal)">已选定字幕区域 ✓</b> 可以点击下方「开始处理」';
+});
+function draw(x0,y0,x1,y1){
+  const l=Math.min(x0,x1)*100, t=Math.min(y0,y1)*100;
+  box.style.left=l+"%"; box.style.top=t+"%";
+  box.style.width=Math.abs(x1-x0)*100+"%";
+  box.style.height=Math.abs(y1-y0)*100+"%";
+}
+
+/* ---------- 模式与放大 ---------- */
+document.querySelectorAll(".mode").forEach(el=>{
+  el.addEventListener("click",()=>setMode(el.dataset.clean));
+});
+function setMode(m){
+  state.clean=m;
+  document.querySelectorAll(".mode").forEach(x=>x.classList.toggle("on",x.dataset.clean===m));
+}
+document.querySelectorAll(".scale").forEach(el=>{
+  el.addEventListener("click",()=>{
+    state.scale=+el.dataset.scale;
+    document.querySelectorAll(".scale").forEach(x=>x.classList.toggle("on",x===el));
+  });
+});
+
+/* ---------- 开始处理 ---------- */
+$("#goBtn").addEventListener("click",async ()=>{
+  if(!state.fid) return toast("请先选择视频");
+  if(!$("#autoRegion").checked && !state.region)
+    return toast("请在画面上拖动框选字幕区域，或打开「字幕在画面底部」开关", true);
+  const region = $("#autoRegion").checked ? "0.78,0.95" : state.region;
+  $("#goBtn").disabled=true; $("#goBtn").textContent="已提交，正在排队…";
+  try{
+    const r = await apiJSON("/api/task",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({fid:state.fid, clean:state.clean, region:region, scale:state.scale})
+    }, 1);
+    if(!r.ok) throw new Error(r.error);
+    steps(3);
+    addTaskCard(r.task);
+    $("#goBtn").disabled=false; $("#goBtn").textContent="开始处理";
+    $("#tasks").scrollIntoView({behavior:"smooth",block:"start"});
+    resetForNext();
+  }catch(e){ toast(e.message,true); $("#goBtn").disabled=false; $("#goBtn").textContent="开始处理"; }
+});
+
+function resetForNext(){
+  state.fid=null; state.file=null; state.region=null;
+  $("#upbar").style.display="none"; $("#upbar i").style.width="0";
+  $("#uptext").style.display="none";
+  $("#drop").style.display="block";
+  $("#previewSec").style.display="none"; $("#modeCard").style.display="none";
+  steps(1);
+}
+
+/* ---------- 任务轮询 ---------- */
+function addTaskCard(t){
+  const el=document.createElement("div");
+  el.className="tcard"; el.id="tc-"+t.id;
+  el.innerHTML = pillHTML(t);
+  $("#tasks").prepend(el);
+  const timer=setInterval(()=>refreshTask(t.id), 2000);
+  state.poller[t.id]=timer; refreshTask(t.id);
+}
+function pillHTML(t){
+  let inner='<div class="tt"><span class="nm">'+esc(t.name)+'</span><span class="pill run" id="p-'+t.id+'">处理中</span></div>';
+  inner+='<div class="pbar" id="b-'+t.id+'"><i style="width:'+Math.round((t.progress||0.03)*100)+'%"></i></div>';
+  inner+='<div class="msg" id="m-'+t.id+'">'+esc(t.stage_text||"排队中…")+'</div>';
+  if(t.status==="error") inner+='<div class="errbox">'+esc(t.error)+'</div>';
+  if(t.status==="done") inner+=resultHTML(t);
+  return inner;
+}
+function resultHTML(t){
+  return '<video class="resvid" controls playsinline preload="metadata" src="'+t.video_url+'"></video>'
+       + '<a class="dl" href="'+t.download_url+'" download>⬇ 保存处理后的视频</a>';
+}
+async function refreshTask(id){
+  try{
+    const t = await (await fetch("/api/task/"+id)).json();
+    const pill=$("#p-"+id), bar=$("#b-"+id), msg=$("#m-"+id), card=$("#tc-"+id);
+    if(!card) return;
+    if(t.status==="running"){
+      pill.className="pill run"; pill.textContent="处理中";
+      bar.classList.add("ind"); bar.querySelector("i").style.width="38%";
+      msg.textContent=t.stage_text||"处理中…";
+    }else if(t.status==="done"){
+      clearInterval(state.poller[id]);
+      pill.className="pill ok"; pill.textContent="完成";
+      bar.classList.remove("ind"); bar.querySelector("i").style.width="100%";
+      msg.textContent="处理完成 ✓ 画面下方可直接预览";
+      card.querySelectorAll(".resvid,.dl,.errbox").forEach(x=>x.remove());
+      card.insertAdjacentHTML("beforeend",resultHTML(t));
+      card.insertAdjacentHTML("beforeend",
+        '<a class="again" onclick="location.reload()">再处理一个视频 ↺</a>');
+      toast("视频处理完成！");
+    }else if(t.status==="error"){
+      clearInterval(state.poller[id]);
+      pill.className="pill err"; pill.textContent="失败";
+      bar.classList.remove("ind"); bar.querySelector("i").style.width="100%";
+      bar.style.display="none";
+      if(!card.querySelector(".errbox"))
+        card.insertAdjacentHTML("beforeend",'<div class="errbox">'+esc(t.error||"处理失败")+'</div>');
+      card.insertAdjacentHTML("beforeend",
+        '<a class="again" onclick="location.reload()">重新开始 ↺</a>');
+    }
+  }catch(e){/* 忽略瞬时网络错误 */}
+}
+
+/* 恢复历史任务（服务端重启后列表仍在内存中时） */
+fetch("/api/tasks").then(r=>r.json()).then(d=>{
+  (d.tasks||[]).forEach(t=>addTaskCard(t));
+}).catch(()=>{});
+
+function esc(s){ return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+</script>
+</body>
+</html>

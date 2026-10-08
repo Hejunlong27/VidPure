@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vidpure"
+version = "0.1.0"
+description = "AI video hard-subtitle remover + upscaler: local orchestrator CLI and ComfyUI custom nodes"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "vidpure contributors" }]
+keywords = ["video", "subtitle-remover", "inpainting", "upscaler", "real-esrgan", "comfyui"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Video :: Post-Production",
+]
+# 核心零第三方依赖：FFmpeg 为外部二进制，由用户安装
+dependencies = []
+
+[project.optional-dependencies]
+# LaMa 逐帧修复（调度器 lama 通道 + ComfyUI 节点）
+gpu = ["iopaint>=1.4"]
+# torch 版 Real-ESRGAN（可选；默认放大引擎为免 torch 的 NCNN Vulkan）
+torch = ["realesrgan>=1.3", "basicsr>=1.4.2"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+vidpure = "vidpure.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Hejunlong27/VidPure"
+Issues = "https://github.com/Hejunlong27/VidPure/issues"
+
+[tool.setuptools.packages.find]
+include = ["vidpure*"]
+
+[tool.setuptools.package-data]
+vidpure = ["backends/templates/*.json"]

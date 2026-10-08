@@ -1,0 +1,8 @@
+# vidpure 核心：零第三方 Python 依赖（FFmpeg 为外部二进制，需自行安装加入 PATH）
+#
+# 可选能力按需安装：
+#   LaMa 去字幕（--clean lama / ComfyUI 节点）:  pip install iopaint
+#   torch 版 Real-ESRGAN（可选）:               pip install realesrgan basicsr
+#   NVIDIA RTX 50 系（Blackwell）torch 需 cu128: pip install torch --index-url https://download.pytorch.org/whl/cu128
+#
+# 或使用 extras：pip install "vidpure[gpu]"

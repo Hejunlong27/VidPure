@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# 模型权重与引擎缓存（运行时下载，不入库）
+*.pth
+*.bin
+*.param
+.vidpure/
+
+# 输出与中间产物
+vidpure_output/
+output/
+_work_*/
+frames/
+masks/
+clean/
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 测试
+.pytest_cache/
+tests/tmp/
