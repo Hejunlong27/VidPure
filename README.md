@@ -2,6 +2,8 @@
 
 **AI 视频硬字幕清除 + 画质放大 —— 一体化开源工具**
 
+[English](README_EN.md) | 中文
+
 `vidpure` 是一个「调度器」：它自己不实现任何 AI 模型，而是探测你的硬件、
 自动拉起最合适的本地算力（FFmpeg / IOPaint-LaMa / Real-ESRGAN-NCNN / ComfyUI server），
 把 **去字幕 → 放大 → 音频封装** 串成一条命令的流水线。
