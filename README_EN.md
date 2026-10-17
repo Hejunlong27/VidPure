@@ -260,7 +260,8 @@ pytest tests/ -q
 
 ## License
 
-Released under the **Apache License 2.0** — see [LICENSE](LICENSE) for the full text.
+Released under the **Apache License 2.0** — see [LICENSE](LICENSE) for the full text,
+and [NOTICE](NOTICE) for third-party component and model-weight attribution.
 
 Third-party components keep their own upstream licenses (see Acknowledgements above):
 Real-ESRGAN (BSD-3-Clause), IOPaint / LaMa (Apache-2.0), whisper.cpp (MIT),

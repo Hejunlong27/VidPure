@@ -324,7 +324,8 @@ ASS 落点回读断言、手画框定位、时间轴单调不重叠、SRT 解析
 
 ## License
 
-本项目以 **Apache License 2.0** 发布，完整条款见 [LICENSE](LICENSE)。
+本项目以 **Apache License 2.0** 发布，完整条款见 [LICENSE](LICENSE)，
+第三方组件与模型权重的归属声明见 [NOTICE](NOTICE)。
 
 第三方组件各自遵循其上游许可（见上方「致谢」）：
 Real-ESRGAN（BSD-3-Clause）、IOPaint / LaMa（Apache-2.0）、

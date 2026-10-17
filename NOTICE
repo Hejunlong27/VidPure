@@ -1,0 +1,48 @@
+VidPure
+Copyright 2026 The VidPure Authors
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file in this repository for the full license text.
+
+
+--------------------------------------------------------------------------
+Third-party components
+--------------------------------------------------------------------------
+
+VidPure is an orchestrator: it implements no AI models of its own and does
+not redistribute third-party model weights. The components below are either
+invoked as external programs at runtime, or are optional runtime
+dependencies. Each remains under its own upstream license.
+
+  Real-ESRGAN (NCNN Vulkan build)   BSD-3-Clause
+      https://github.com/xinntao/Real-ESRGAN
+  IOPaint / lama-cleaner            Apache-2.0
+      https://github.com/Sanster/IOPaint
+  LaMa                              Apache-2.0
+      https://github.com/advimman/lama
+  whisper.cpp                       MIT
+      https://github.com/ggerganov/whisper.cpp
+  ctc-forced-aligner                MIT
+      https://github.com/MahmoudAshraf97/ctc-forced-aligner
+
+
+--------------------------------------------------------------------------
+Optional integrations (not bundled)
+--------------------------------------------------------------------------
+
+Install these separately and observe their own licenses. They are listed
+here for attribution only; no code from them is distributed with VidPure.
+
+  ComfyUI                    https://github.com/comfyanonymous/ComfyUI
+  ComfyUI-VideoHelperSuite   https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+  FFmpeg                     https://ffmpeg.org   (LGPL or GPL, build-dependent)
+
+
+--------------------------------------------------------------------------
+Model weights
+--------------------------------------------------------------------------
+
+Model weights — including Real-ESRGAN .bin / .param / .pth files, whisper
+ggml models, and CTC forced-aligner checkpoints — are NOT part of this
+distribution. They are downloaded at runtime from each upstream project's
+official release and are governed by the corresponding upstream licenses.
