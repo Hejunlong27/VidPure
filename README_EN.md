@@ -260,4 +260,9 @@ pytest tests/ -q
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Third-party model & component licenses are listed there.
+Released under the **Apache License 2.0** — see [LICENSE](LICENSE) for the full text.
+
+Third-party components keep their own upstream licenses (see Acknowledgements above):
+Real-ESRGAN (BSD-3-Clause), IOPaint / LaMa (Apache-2.0), whisper.cpp (MIT),
+ctc-forced-aligner (MIT). Model weights are **not** bundled with this repository —
+they are downloaded at runtime from each upstream's official release.
