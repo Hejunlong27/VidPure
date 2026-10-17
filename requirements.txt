@@ -6,3 +6,14 @@
 #   NVIDIA RTX 50 系（Blackwell）torch 需 cu128: pip install torch --index-url https://download.pytorch.org/whl/cu128
 #
 # 或使用 extras：pip install "vidpure[gpu]"
+#
+# ---------------------------------------------------------------------------
+# 字幕烧录（--burn-subtitle）依赖的是**外部可执行文件**，不是 pip 包：
+#   · 台词识别：whisper.cpp 的 whisper-cli + 一个 ggml 模型
+#   · 字幕对齐（可选精修）：ctc-forced-aligner（缺失时自动退回语音识别时间轴）
+# 路径可用环境变量覆盖，无需改代码：
+#   VIDPURE_WHISPER_CLI / VIDPURE_WHISPER_MODEL / VIDPURE_ALIGNER
+# `vidpure probe` 会打印这三项是否就绪。
+#
+# 开发/测试：
+#   pip install -e ".[dev]" && pytest tests/ -q

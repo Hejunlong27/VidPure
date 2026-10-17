@@ -58,11 +58,18 @@ def make_mask_png(w: int, h: int, rects: list, out: Path) -> None:
 
 def mux(frames_dir: Path, src: Path, dst: Path, fps: float,
         vcodec: str = "libx264", crf: int = 18, preset: str = "medium",
-        mute: bool = False) -> None:
-    """帧序列 + 原视频音频 → 成片。音频优先无损耗 copy。"""
+        mute: bool = False, vf: str | None = None) -> None:
+    """帧序列 + 原视频音频 → 成片。音频优先无损耗 copy。
+
+    vf：可选的视频滤镜串（如精确缩放到目标分辨率的 `scale=W:H:flags=lanczos`）。
+    AI 超分只支持整数倍（2/3/4），要落到**任意固定分辨率**就得再补一次精确缩放，
+    这一步就挂在 mux 上，避免多编码一代。
+    """
     info = ffprobe(src)
     cmd = ["ffmpeg", "-y", "-framerate", f"{fps:.6f}",
            "-i", str(frames_dir / "f%06d.png"), "-i", str(src), "-map", "0:v:0"]
+    if vf:
+        cmd += ["-vf", vf]
     if info["has_audio"] and not mute:
         if dst.suffix in (".mp4", ".m4v") and info["audio_codec"] in MP4_OK_AUDIO:
             cmd += ["-map", "1:a:0?", "-c:a", "copy"]

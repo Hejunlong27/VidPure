@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vidpure"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI video hard-subtitle remover + upscaler: local orchestrator CLI and ComfyUI custom nodes"
 readme = "README.md"
 requires-python = ">=3.9"
